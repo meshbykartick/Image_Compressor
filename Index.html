@@ -99,5 +99,36 @@
       }
     });
   </script>
+
+  <div id="server-status" style="font-weight:bold; color: gray;">
+  Checking server status...
+</div>
+
+<script>
+  async function checkServer() {
+    const statusDiv = document.getElementById('server-status');
+    try {
+      const res = await fetch('http://123.45.67.89:5000/status', { method: 'GET' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === 'online') {
+          statusDiv.textContent = '🟢 Server Online';
+          statusDiv.style.color = 'green';
+        } else {
+          statusDiv.textContent = '🟠 Server Response Invalid';
+          statusDiv.style.color = 'orange';
+        }
+      } else {
+        throw new Error('Bad response');
+      }
+    } catch (err) {
+      statusDiv.textContent = '🔴 Server Offline';
+      statusDiv.style.color = 'red';
+    }
+  }
+
+  checkServer();
+  setInterval(checkServer, 10000); // check every 10 seconds
+</script>
 </body>
 </html>
