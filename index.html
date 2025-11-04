@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Image Compressor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: #f4f4f4;
+            padding: 40px;
+        }
+        #upload-box {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            display: inline-block;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        input[type=file] {
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            background: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #status {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        #serverStatus {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <h1>🖼️ Image Compressor</h1>
+    <div id="upload-box">
+        <input type="file" id="imageInput" accept="image/*">
+        <br>
+        <button onclick="uploadImage()">Compress & Download</button>
+        <p id="status"></p>
+        <p>Server Status: <span id="serverStatus">Checking...</span></p>
+    </div>
+
+    <script>
+        const SERVER = "https://unvenerative-shanon-nonlixiviated.ngrok-free.dev";
+
+        // 🟢 Check server status
+        async function checkServer() {
+            try {
+                const res = await fetch(`${SERVER}/status`);
+                const data = await res.json();
+                if (data.server === "online") {
+                    document.getElementById("serverStatus").textContent = "🟢 Online";
+                    document.getElementById("serverStatus").style.color = "green";
+                } else {
+                    throw new Error("offline");
+                }
+            } catch {
+                document.getElementById("serverStatus").textContent = "🔴 Offline";
+                document.getElementById("serverStatus").style.color = "red";
+            }
+        }
+
+        checkServer();
+
+        // 🖼️ Upload and compress
+        async function uploadImage() {
+            const fileInput = document.getElementById("imageInput");
+            const status = document.getElementById("status");
+
+            if (!fileInput.files.length) {
+                status.textContent = "Please select an image.";
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("image", fileInput.files[0]);
+
+            status.textContent = "Compressing...";
+
+            try {
+                const response = await fetch(`${SERVER}/upload`, {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error("Compression failed.");
+
+                const blob = await response.blob();
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = "compressed.jpg";
+                link.click();
+
+                status.textContent = "✅ Image compressed and downloaded!";
+            } catch (err) {
+                status.textContent = "❌ Error: " + err.message;
+            }
+        }
+    </script>
+</body>
+</html>
