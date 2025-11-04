@@ -1,134 +1,96 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Photo Compressor</title>
+  <meta charset="UTF-8">
+  <title>Image Compressor</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       text-align: center;
-      margin-top: 50px;
+      padding: 40px;
+      background: linear-gradient(to bottom, #f7f7f7, #ececec);
+    }
+    h1 {
+      color: #333;
+    }
+    input, button {
+      margin: 10px;
+      padding: 10px;
+      font-size: 16px;
     }
     #status {
-      margin-top: 10px;
-      color: #333;
+      margin: 10px;
+      font-weight: bold;
     }
     #downloadLink {
       display: none;
-      margin-top: 10px;
-      color: green;
-    }
-    button {
-      padding: 8px 16px;
-      background: #007bff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #0056b3;
+      font-size: 18px;
+      color: #007BFF;
+      text-decoration: none;
     }
   </style>
 </head>
 <body>
-  <h2>Upload Photo to Compress</h2>
-  
+  <h1>🖼️ Online Image Compressor</h1>
+  <p id="status">Checking server...</p>
+
   <form id="uploadForm">
-    <input type="file" id="imageFile" accept="image/*" required />
-    <button type="submit">Compress</button>
+    <input type="file" name="image" id="imageInput" accept="image/*" required><br>
+    <button type="submit">Upload & Compress</button>
   </form>
 
-  <p id="status"></p>
-  <a id="downloadLink">Download Compressed Image</a>
+  <a id="downloadLink">⬇️ Download Compressed Image</a>
 
   <script>
-    const form = document.getElementById("uploadForm");
-    const status = document.getElementById("status");
-    const downloadLink = document.getElementById("downloadLink");
+    const SERVER_URL = "https://unvenerative-shanon-nonlixiviated.ngrok-free.dev";
 
-    // ✅ Customize your limits here
-    const MAX_SIZE_MB = 10; // Maximum allowed file size (in MB)
-    const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+    // ✅ Check server status
+    fetch(`${SERVER_URL}/status`)
+      .then(r => r.json())
+      .then(d => {
+        document.getElementById('status').innerText = '🟢 Server Online';
+        document.getElementById('status').style.color = 'green';
+      })
+      .catch(e => {
+        document.getElementById('status').innerText = '🔴 Server Offline';
+        document.getElementById('status').style.color = 'red';
+      });
 
-    form.addEventListener("submit", async (e) => {
+    // ✅ Handle upload and compression
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-
-      const file = document.getElementById("imageFile").files[0];
-      if (!file) {
-        status.textContent = "⚠️ Please select a file first.";
-        return;
-      }
-
-      // ✅ Check file type
-      if (!ALLOWED_TYPES.includes(file.type)) {
-        status.textContent = "❌ Only JPG, PNG, or WEBP images are allowed.";
-        return;
-      }
-
-      // ✅ Check file size
-      const sizeMB = file.size / (1024 * 1024);
-      if (sizeMB > MAX_SIZE_MB) {
-        status.textContent = `❌ File too large (${sizeMB.toFixed(2)} MB). Max is ${MAX_SIZE_MB} MB.`;
-        return;
-      }
-
-      // ✅ Passed all checks → upload
-      status.textContent = "⏳ Compressing... please wait.";
+      const file = document.getElementById('imageInput').files[0];
+      if (!file) return alert("Select an image first!");
 
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("image", file);
+
+      document.getElementById('status').innerText = '⏳ Uploading & Compressing...';
+      document.getElementById('status').style.color = 'orange';
 
       try {
-        const response = await fetch("http://YOUR_PUBLIC_IP:5000/compress", {
+        const response = await fetch(`${SERVER_URL}/upload`, {
           method: "POST",
-          body: formData,
+          body: formData
         });
 
         if (!response.ok) throw new Error("Compression failed");
 
         const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
+        const url = window.URL.createObjectURL(blob);
+        const link = document.getElementById("downloadLink");
+        link.href = url;
+        link.download = "compressed.jpg";
+        link.style.display = "block";
+        link.innerText = "⬇️ Download Compressed Image";
 
-        downloadLink.href = url;
-        downloadLink.download = "compressed.jpg";
-        downloadLink.style.display = "inline-block";
-        downloadLink.textContent = "✅ Download Compressed Image";
-        status.textContent = "✅ Compression complete!";
+        document.getElementById('status').innerText = '✅ Done!';
+        document.getElementById('status').style.color = 'green';
       } catch (err) {
-        status.textContent = "❌ Error: " + err.message;
+        document.getElementById('status').innerText = '❌ Upload failed or server offline';
+        document.getElementById('status').style.color = 'red';
       }
     });
   </script>
-
-  <div id="server-status" style="font-weight:bold; color: gray;">
-  Checking server status...
-</div>
-
-<script>
-  async function checkServer() {
-    const statusDiv = document.getElementById('server-status');
-    try {
-      const res = await fetch('http://123.45.67.89:5000/status', { method: 'GET' });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.status === 'online') {
-          statusDiv.textContent = '🟢 Server Online';
-          statusDiv.style.color = 'green';
-        } else {
-          statusDiv.textContent = '🟠 Server Response Invalid';
-          statusDiv.style.color = 'orange';
-        }
-      } else {
-        throw new Error('Bad response');
-      }
-    } catch (err) {
-      statusDiv.textContent = '🔴 Server Offline';
-      statusDiv.style.color = 'red';
-    }
-  }
-
-  checkServer();
-  setInterval(checkServer, 10000); // check every 10 seconds
-</script>
 </body>
 </html>
